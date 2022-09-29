@@ -1,0 +1,12 @@
+{
+  "short_name": "YL",
+  "name": "Yuan Liu",
+  "icons": [{
+    "src": "icon.png",
+    "type": "image/png",
+    "sizes": "2000x2000"
+  }],
+  "start_url": "/?utm_source=homescreen",
+  "background_color": "#fafafa",
+  "theme_color": "#fafafa"
+}
