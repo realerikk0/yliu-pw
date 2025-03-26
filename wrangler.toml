@@ -1,0 +1,13 @@
+name = "yliu-pw"
+compatibility_date = "2025-03-17"
+
+# Pages 构建输出目录
+pages_build_output_dir = "dist"
+
+# 环境变量
+[vars]
+NODE_ENV = "production"
+
+# 开发环境变量
+[dev]
+port = 8788
