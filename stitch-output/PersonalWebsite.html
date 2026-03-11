@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Terminal | Creative Engineer Portfolio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&amp;display=swap" rel="stylesheet"/>
+<style data-purpose="base-typography">
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #ffffff;
+            color: #000000;
+            overflow-x: hidden;
+        }
+        ::selection {
+            background: #000;
+            color: #fff;
+        }
+    </style>
+<style data-purpose="background-textures">
+        .dot-grid {
+            background-image: radial-gradient(#d1d1d1 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+    </style>
+<style data-purpose="terminal-styling">
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background: #000;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .terminal-command::before {
+            content: "visitor@california:~$ ";
+            font-weight: 800;
+            color: #666;
+        }
+        .directory-link:hover {
+            background-color: #000;
+            color: #fff;
+            cursor: crosshair;
+        }
+        .tree-line {
+            color: #a1a1aa;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="dot-grid min-h-screen p-6 md:p-12 lg:p-20 relative">
+<main class="max-w-6xl mx-auto relative z-20">
+<header class="mb-16">
+<div class="terminal-command text-xl md:text-2xl mb-4">whoami</div>
+<div class="pl-4 md:pl-8 mb-8">
+<pre class="text-[0.5rem] md:text-xs leading-none font-bold mb-6 overflow-x-auto">███████╗███╗   ██╗ ██████╗ ██╗███╗   ██╗███████╗███████╗██████╗ 
+██╔════╝████╗  ██║██╔════╝ ██║████╗  ██║██╔════╝██╔════╝██╔══██╗
+█████╗  ██╔██╗ ██║██║  ███╗██║██╔██╗ ██║█████╗  █████╗  ██████╔╝
+██╔══╝  ██║╚██╗██║██║   ██║██║██║╚██╗██║██╔══╝  ██╔══╝  ██╔══██╗
+███████╗██║ ╚████║╚██████╔╝██║██║ ╚████║███████╗███████╗██║  ██║
+╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝╚═╝  ╚═╝
+            </pre>
+<p class="text-2xl md:text-4xl font-extrabold tracking-tighter uppercase">
+                Freedom through logic. <br/>
+                Structure by design.
+            </p>
+</div>
+</header>
+<section class="mb-16">
+<div class="terminal-command text-xl md:text-2xl mb-4">cat about.md</div>
+<div class="pl-4 md:pl-8 max-w-2xl">
+<p class="text-lg leading-relaxed">
+                Systems Architect based in California. I build high-performance, rigid structures. Focus on monospaced logic, low-latency execution, and minimal aesthetics.
+            </p>
+</div>
+</section>
+<section class="mb-16">
+<div class="terminal-command text-xl md:text-2xl mb-4">tree projects/ --noreport</div>
+<div class="pl-4 md:pl-8 mt-6">
+<div class="flex flex-col space-y-4">
+<div class="flex flex-col">
+<div class="flex items-center">
+<span class="tree-line mr-2">├──</span>
+<a class="directory-link font-black text-xl px-1" href="#">NEURAL_GRAFFITI</a>
+</div>
+<div class="flex items-start ml-8">
+<span class="tree-line mr-2">│  └──</span>
+<p class="text-sm text-gray-600 italic">GAN-based synthesis of generative street art textures.</p>
+</div>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center">
+<span class="tree-line mr-2">├──</span>
+<a class="directory-link font-black text-xl px-1" href="#">VOID_KERNEL</a>
+</div>
+<div class="flex items-start ml-8">
+<span class="tree-line mr-2">│  └──</span>
+<p class="text-sm text-gray-600 italic">Rust micro-kernel for distributed edge compute operations.</p>
+</div>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center">
+<span class="tree-line mr-2">├──</span>
+<a class="directory-link font-black text-xl px-1" href="#">PACIFIC_PROTO</a>
+</div>
+<div class="flex items-start ml-8">
+<span class="tree-line mr-2">│  └──</span>
+<p class="text-sm text-gray-600 italic">Decentralized P2P protocol for low-latency data sync.</p>
+</div>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center">
+<span class="tree-line mr-2">└──</span>
+<a class="directory-link font-black text-xl px-1" href="#">SYNTAX_ERROR_00</a>
+</div>
+<div class="flex items-start ml-8">
+<span class="tree-line mr-2">   └──</span>
+<p class="text-sm text-gray-600 italic">CLI-based rendering engine for intentional glitch-art.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="mb-32">
+<div class="terminal-command text-xl md:text-2xl mb-4">finger contact</div>
+<div class="pl-4 md:pl-8 flex flex-col gap-4">
+<div class="flex items-center gap-4">
+<span class="font-bold w-24">GITHUB:</span>
+<a class="directory-link px-1" href="#">/dev/null/engineer</a>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-bold w-24">X:</span>
+<a class="directory-link px-1" href="#">@chaos_engine</a>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-bold w-24">MAIL:</span>
+<a class="directory-link px-1" href="#">hello@freedom.io</a>
+</div>
+</div>
+</section>
+<footer class="mt-20 border-t border-black/10 pt-8">
+<div class="text-xl md:text-2xl font-bold flex items-center">
+<span class="terminal-command"></span>
+<span class="cursor"></span>
+</div>
+<p class="text-[10px] text-gray-400 mt-12 uppercase tracking-[0.5em]">
+            © 2024 California Freedom Logic - Stay Defined.
+        </p>
+</footer>
+</main>
+
+</body></html>
