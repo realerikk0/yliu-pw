@@ -74,6 +74,11 @@ button {
   margin-bottom: 48px;
 }
 
+.toolbar > .prompt-line-live {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .locale-switch {
   display: inline-flex;
   align-items: center;
@@ -140,6 +145,10 @@ button {
 
 .prompt-prefix {
   color: var(--muted);
+}
+
+.prompt-line-live {
+  min-height: 1.4rem;
 }
 
 .hero-section {
@@ -231,6 +240,10 @@ button {
   margin: 0;
   font-size: 1rem;
   line-height: 1.85;
+}
+
+.terminal-output {
+  animation: output-reveal 420ms ease both;
 }
 
 .tree-list,
@@ -381,6 +394,18 @@ button {
 }
 
 @keyframes reveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes output-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
   to {
     opacity: 1;
     transform: translateY(0);

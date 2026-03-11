@@ -28,7 +28,6 @@ type Contact = {
 type Copy = {
   gatewayHost: string
   shellHost: string
-  identity: string
   hero: string[]
   about: CommandSection
   projectHeading: string
@@ -40,11 +39,35 @@ type Copy = {
   footer: string
 }
 
+type SectionId = 'hero' | 'about' | 'projects' | 'experience' | 'contact'
+
+type StepId = 'ssh' | SectionId
+
+type SequenceStep = {
+  id: StepId
+  host: string
+  command: string
+  section?: SectionId
+  leadDelay: number
+  typeSpeed: number
+  settleDelay: number
+  revealDelay: number
+}
+
 const localeKey = 'site-locale'
+const loginCommand = 'ssh erikk0@portfolio'
 const localeOptions: Array<{ value: Locale; label: string }> = [
   { value: 'en-US', label: 'en_US' },
   { value: 'zh-CN', label: 'zh_CN' }
 ]
+const initialSections: Record<SectionId, boolean> = {
+  hero: false,
+  about: false,
+  projects: false,
+  experience: false,
+  contact: false
+}
+
 const pixelGlyphs: Record<string, string[]> = {
   E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
   R: ['111110', '100011', '100011', '111110', '101100', '100110', '100011'],
@@ -59,11 +82,7 @@ const copy: Record<Locale, Copy> = {
   'en-US': {
     gatewayHost: 'anonymous@mainframe:~$',
     shellHost: 'erikk0@portfolio:~$',
-    identity: 'Erik Liu',
-    hero: [
-      'Freedom through logic.',
-      'Structure by design.'
-    ],
+    hero: ['Freedom through logic.', 'Structure by design.'],
     about: {
       command: 'cat about.md',
       body:
@@ -122,8 +141,8 @@ const copy: Record<Locale, Copy> = {
       },
       {
         label: 'MAIL',
-        value: 'yuanliu325@gmail.com',
-        href: 'mailto:yuanliu325@gmail.com'
+        value: 'erik@yliu.pw',
+        href: 'mailto:erik@yliu.pw'
       }
     ],
     footer: 'Erik Liu / Systems, products, and AI workflows'
@@ -131,15 +150,11 @@ const copy: Record<Locale, Copy> = {
   'zh-CN': {
     gatewayHost: 'anonymous@mainframe:~$',
     shellHost: 'erikk0@portfolio:~$',
-    identity: 'Erik Liu',
-    hero: [
-      'Freedom through logic.',
-      'Structure by design.'
-    ],
+    hero: ['Freedom through logic.', 'Structure by design.'],
     about: {
       command: 'cat about.md',
       body:
-        '我覆盖前端、后端、基础设施、部署与 AI workflow 的完整链路。技术栈包括 React、Vue、Python、PHP、Node.js、C#、Tauri、CI/CD、云服务、数据系统以及基于 LLM 的产品与多代理工作流。'
+        '我覆盖前端、后端、基础设施、部署与 AI workflow 的完整链路。技术栈包括 React、Vue、Python、PHP、Node.js、C#、Tauri、CI/CD、云服务、数据系统，以及基于 LLM 的产品与多代理工作流。'
     },
     projectHeading: 'tree work/ --depth 1',
     projectSections: [
@@ -170,14 +185,12 @@ const copy: Record<Locale, Copy> = {
       {
         company: 'Covenate',
         period: '2017-2021',
-        summary:
-          '参与并交付基于区块链、数字证书能力的电子签署系统，技术栈以 PHP 与 JavaScript 为主。'
+        summary: '参与并交付基于区块链、数字证书能力的电子签署系统，技术栈以 PHP 与 JavaScript 为主。'
       },
       {
         company: 'Lilyn.ai',
         period: '2022-2026',
-        summary:
-          '主导虚拟偶像、AI 陪伴桌面应用与智能投资助手等产品的规划、系统设计、AI 集成与技术落地。'
+        summary: '主导虚拟偶像、AI 陪伴桌面应用与智能投资助手等产品的规划、系统设计、AI 集成与技术落地。'
       }
     ],
     contactHeading: 'finger contact',
@@ -194,8 +207,8 @@ const copy: Record<Locale, Copy> = {
       },
       {
         label: 'MAIL',
-        value: 'yuanliu325@gmail.com',
-        href: 'mailto:yuanliu325@gmail.com'
+        value: 'erik@yliu.pw',
+        href: 'mailto:erik@yliu.pw'
       }
     ],
     footer: 'Erik Liu / 系统、产品与 AI workflow'
@@ -211,11 +224,22 @@ function getInitialLocale(): Locale {
   return navigator.language.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US'
 }
 
-function Prompt({ command, host }: { command: string; host: string }) {
+function TerminalPrompt({
+  command,
+  host,
+  typedLength,
+  isActive
+}: {
+  command: string
+  host: string
+  typedLength: number
+  isActive: boolean
+}) {
   return (
-    <div className="prompt-line">
+    <div className="prompt-line prompt-line-live">
       <span className="prompt-prefix">{host}</span>
-      <span>{command}</span>
+      <span>{command.slice(0, typedLength)}</span>
+      {isActive ? <span className="cursor" aria-hidden="true" /> : null}
     </div>
   )
 }
@@ -256,6 +280,12 @@ function PixelTitle({ text }: { text: string }) {
 
 export default function App() {
   const [locale, setLocale] = useState<Locale>(() => getInitialLocale())
+  const [activeStep, setActiveStep] = useState<StepId | null>(null)
+  const [typedCounts, setTypedCounts] = useState<Partial<Record<StepId, number>>>({})
+  const [revealedSections, setRevealedSections] = useState<Record<SectionId, boolean>>(() => ({
+    ...initialSections
+  }))
+  const [sequenceDone, setSequenceDone] = useState(false)
   const active = copy[locale]
 
   useEffect(() => {
@@ -263,13 +293,167 @@ export default function App() {
     window.localStorage.setItem(localeKey, locale)
   }, [locale])
 
+  useEffect(() => {
+    const steps: SequenceStep[] = [
+      {
+        id: 'ssh',
+        host: active.gatewayHost,
+        command: loginCommand,
+        leadDelay: 1100,
+        typeSpeed: 72,
+        settleDelay: 420,
+        revealDelay: 820
+      },
+      {
+        id: 'hero',
+        host: active.shellHost,
+        command: 'whoami',
+        section: 'hero',
+        leadDelay: 220,
+        typeSpeed: 78,
+        settleDelay: 260,
+        revealDelay: 680
+      },
+      {
+        id: 'about',
+        host: active.shellHost,
+        command: active.about.command,
+        section: 'about',
+        leadDelay: 180,
+        typeSpeed: 48,
+        settleDelay: 220,
+        revealDelay: 520
+      },
+      {
+        id: 'projects',
+        host: active.shellHost,
+        command: active.projectHeading,
+        section: 'projects',
+        leadDelay: 180,
+        typeSpeed: 30,
+        settleDelay: 260,
+        revealDelay: 640
+      },
+      {
+        id: 'experience',
+        host: active.shellHost,
+        command: active.experienceHeading,
+        section: 'experience',
+        leadDelay: 180,
+        typeSpeed: 34,
+        settleDelay: 260,
+        revealDelay: 620
+      },
+      {
+        id: 'contact',
+        host: active.shellHost,
+        command: active.contactHeading,
+        section: 'contact',
+        leadDelay: 180,
+        typeSpeed: 44,
+        settleDelay: 220,
+        revealDelay: 520
+      }
+    ]
+    const timerIds: number[] = []
+    let cancelled = false
+
+    const wait = (ms: number) =>
+      new Promise<void>((resolve) => {
+        const timerId = window.setTimeout(resolve, ms)
+        timerIds.push(timerId)
+      })
+
+    const queueScroll = () => {
+      const timerId = window.setTimeout(() => {
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: 'smooth'
+        })
+      }, 40)
+
+      timerIds.push(timerId)
+    }
+
+    const runSequence = async () => {
+      window.scrollTo({ top: 0, behavior: 'auto' })
+      setActiveStep(null)
+      setTypedCounts({})
+      setRevealedSections({ ...initialSections })
+      setSequenceDone(false)
+
+      for (const step of steps) {
+        if (cancelled) {
+          return
+        }
+
+        setActiveStep(step.id)
+        setTypedCounts((current) => ({
+          ...current,
+          [step.id]: 0
+        }))
+        queueScroll()
+
+        await wait(step.leadDelay)
+
+        for (let typedLength = 1; typedLength <= step.command.length; typedLength += 1) {
+          if (cancelled) {
+            return
+          }
+
+          setTypedCounts((current) => ({
+            ...current,
+            [step.id]: typedLength
+          }))
+          await wait(step.typeSpeed)
+        }
+
+        await wait(step.settleDelay)
+
+        if (step.section) {
+          const sectionId = step.section
+
+          setRevealedSections((current) => ({
+            ...current,
+            [sectionId]: true
+          }))
+          queueScroll()
+        }
+
+        await wait(step.revealDelay)
+      }
+
+      if (cancelled) {
+        return
+      }
+
+      setActiveStep(null)
+      setSequenceDone(true)
+      queueScroll()
+    }
+
+    void runSequence()
+
+    return () => {
+      cancelled = true
+      timerIds.forEach((timerId) => window.clearTimeout(timerId))
+    }
+  }, [locale])
+
+  const hasStarted = (stepId: StepId) => typedCounts[stepId] !== undefined
+
   return (
     <main className="terminal-page">
       <div className="background-grid" aria-hidden="true" />
 
       <div className="terminal-shell">
         <div className="toolbar">
-          <Prompt command="ssh erikk0@portfolio" host={active.gatewayHost} />
+          <TerminalPrompt
+            command={loginCommand}
+            host={active.gatewayHost}
+            typedLength={typedCounts.ssh ?? 0}
+            isActive={activeStep === 'ssh'}
+          />
           <div className="locale-switch" role="group" aria-label="Language selector">
             <span className="locale-label">locale</span>
             {localeOptions.map((option) => {
@@ -290,88 +474,137 @@ export default function App() {
           </div>
         </div>
 
-        <header className="section hero-section">
-          <Prompt command="whoami" host={active.shellHost} />
-          <div className="section-body hero-stack">
-            <PixelTitle text="ERIK LIU" />
-            <p className="hero-line">{active.hero[0]}</p>
-            <p className="hero-line">{active.hero[1]}</p>
-          </div>
-        </header>
+        {hasStarted('hero') ? (
+          <header className="section hero-section">
+            <TerminalPrompt
+              command="whoami"
+              host={active.shellHost}
+              typedLength={typedCounts.hero ?? 0}
+              isActive={activeStep === 'hero'}
+            />
+            {revealedSections.hero ? (
+              <div className="section-body hero-stack terminal-output">
+                <PixelTitle text="ERIK LIU" />
+                <p className="hero-line">{active.hero[0]}</p>
+                <p className="hero-line">{active.hero[1]}</p>
+              </div>
+            ) : null}
+          </header>
+        ) : null}
 
-        <section className="section">
-          <Prompt command={active.about.command} host={active.shellHost} />
-          <div className="section-body narrow-body">
-            <p>{active.about.body}</p>
-          </div>
-        </section>
+        {hasStarted('about') ? (
+          <section className="section">
+            <TerminalPrompt
+              command={active.about.command}
+              host={active.shellHost}
+              typedLength={typedCounts.about ?? 0}
+              isActive={activeStep === 'about'}
+            />
+            {revealedSections.about ? (
+              <div className="section-body narrow-body terminal-output">
+                <p>{active.about.body}</p>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
-        <section className="section">
-          <Prompt command={active.projectHeading} host={active.shellHost} />
-          <div className="section-body">
-            <ol className="tree-list">
-              {active.projectSections.map((project, index) => (
-                <li key={project.key} className="tree-item" style={{ animationDelay: `${index * 90}ms` }}>
-                  <div className="tree-title-row">
-                    <span className="tree-glyph">{index === active.projectSections.length - 1 ? '└─' : '├─'}</span>
-                    {project.href ? (
-                      <a className="tree-link" href={project.href} target="_blank" rel="noreferrer">
-                        {project.key}
+        {hasStarted('projects') ? (
+          <section className="section">
+            <TerminalPrompt
+              command={active.projectHeading}
+              host={active.shellHost}
+              typedLength={typedCounts.projects ?? 0}
+              isActive={activeStep === 'projects'}
+            />
+            {revealedSections.projects ? (
+              <div className="section-body terminal-output">
+                <ol className="tree-list">
+                  {active.projectSections.map((project, index) => (
+                    <li key={project.key} className="tree-item" style={{ animationDelay: `${index * 90}ms` }}>
+                      <div className="tree-title-row">
+                        <span className="tree-glyph">
+                          {index === active.projectSections.length - 1 ? '└─' : '├─'}
+                        </span>
+                        {project.href ? (
+                          <a className="tree-link" href={project.href} target="_blank" rel="noreferrer">
+                            {project.key}
+                          </a>
+                        ) : (
+                          <span className="tree-link">{project.key}</span>
+                        )}
+                      </div>
+                      <div className="tree-description-row">
+                        <span className="tree-glyph">│</span>
+                        <p>{project.summary}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {hasStarted('experience') ? (
+          <section className="section">
+            <TerminalPrompt
+              command={active.experienceHeading}
+              host={active.shellHost}
+              typedLength={typedCounts.experience ?? 0}
+              isActive={activeStep === 'experience'}
+            />
+            {revealedSections.experience ? (
+              <div className="section-body terminal-output">
+                <ul className="experience-list">
+                  {active.experiences.map((item) => (
+                    <li key={`${item.company}-${item.period}`} className="experience-item">
+                      <div className="experience-head">
+                        <span>{item.company}</span>
+                        <span>{item.period}</span>
+                      </div>
+                      <p>{item.summary}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {hasStarted('contact') ? (
+          <section className="section contact-section">
+            <TerminalPrompt
+              command={active.contactHeading}
+              host={active.shellHost}
+              typedLength={typedCounts.contact ?? 0}
+              isActive={activeStep === 'contact'}
+            />
+            {revealedSections.contact ? (
+              <div className="section-body terminal-output">
+                <ul className="contact-list">
+                  {active.contacts.map((contact) => (
+                    <li key={contact.label} className="contact-item">
+                      <span className="contact-label">{contact.label}</span>
+                      <a href={contact.href} target="_blank" rel="noreferrer">
+                        {contact.value}
                       </a>
-                    ) : (
-                      <span className="tree-link">{project.key}</span>
-                    )}
-                  </div>
-                  <div className="tree-description-row">
-                    <span className="tree-glyph">│</span>
-                    <p>{project.summary}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
-        <section className="section">
-          <Prompt command={active.experienceHeading} host={active.shellHost} />
-          <div className="section-body">
-            <ul className="experience-list">
-              {active.experiences.map((item) => (
-                <li key={`${item.company}-${item.period}`} className="experience-item">
-                  <div className="experience-head">
-                    <span>{item.company}</span>
-                    <span>{item.period}</span>
-                  </div>
-                  <p>{item.summary}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="section contact-section">
-          <Prompt command={active.contactHeading} host={active.shellHost} />
-          <div className="section-body">
-            <ul className="contact-list">
-              {active.contacts.map((contact) => (
-                <li key={contact.label} className="contact-item">
-                  <span className="contact-label">{contact.label}</span>
-                  <a href={contact.href} target="_blank" rel="noreferrer">
-                    {contact.value}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <footer className="terminal-footer">
-          <div className="prompt-line">
-            <span className="prompt-prefix">{active.shellHost}</span>
-            <span className="cursor" aria-hidden="true" />
-          </div>
-          <p>{active.footer}</p>
-        </footer>
+        {sequenceDone ? (
+          <footer className="terminal-footer terminal-output">
+            <div className="prompt-line prompt-line-live">
+              <span className="prompt-prefix">{active.shellHost}</span>
+              <span className="cursor" aria-hidden="true" />
+            </div>
+            <p>{active.footer}</p>
+          </footer>
+        ) : null}
       </div>
     </main>
   )
