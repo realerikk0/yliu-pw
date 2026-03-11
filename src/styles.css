@@ -365,11 +365,131 @@ button {
   border-top: 1px solid var(--line);
 }
 
-.terminal-footer p {
-  margin: 48px 0 0;
+.terminal-signature {
+  margin: 0 0 28px;
   font-size: 0.72rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
+  color: var(--muted);
+}
+
+.terminal-history {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  margin-bottom: 24px;
+}
+
+.terminal-history-entry .section-body {
+  margin-top: 12px;
+}
+
+.terminal-input-form {
+  margin: 0;
+}
+
+.prompt-line-input {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.terminal-input {
+  flex: 1 1 auto;
+  min-width: 120px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  caret-color: var(--line-strong);
+}
+
+.help-panel,
+.system-message {
+  max-width: 76ch;
+  padding: 2px 0;
+}
+
+.help-heading {
+  margin: 0 0 18px;
+  font-size: 0.86rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.help-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.help-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.help-usage {
+  font-weight: 700;
+}
+
+.help-description,
+.system-message p:last-child {
+  color: var(--muted);
+}
+
+.system-message {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.system-message-danger p:first-child {
+  font-weight: 700;
+}
+
+.panic-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(247, 246, 241, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+.panic-dialog {
+  width: min(420px, 100%);
+  padding: 24px 24px 22px;
+  border: 2px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 14px 14px 0 rgba(0, 0, 0, 0.1);
+}
+
+.panic-tag {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.panic-dialog h2 {
+  margin: 0;
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.panic-caption {
+  margin: 16px 0 0;
   color: var(--muted);
 }
 
@@ -473,8 +593,12 @@ button {
     gap: 6px;
   }
 
-  .terminal-footer p {
+  .terminal-signature {
     letter-spacing: 0.18em;
     line-height: 1.8;
+  }
+
+  .prompt-line-input {
+    align-items: flex-start;
   }
 }

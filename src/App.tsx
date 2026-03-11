@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type Locale = 'zh-CN' | 'en-US'
 
@@ -45,13 +46,26 @@ type StepId = 'ssh' | SectionId
 
 type SequenceStep = {
   id: StepId
-  host: string
   command: string
   section?: SectionId
   leadDelay: number
   typeSpeed: number
   settleDelay: number
   revealDelay: number
+}
+
+type HistoryKind = 'help' | 'about' | 'projects' | 'experience' | 'contact' | 'unknown' | 'rm'
+
+type TerminalHistoryEntry = {
+  id: number
+  command: string
+  kind: HistoryKind
+}
+
+type HelpEntry = {
+  usage: string
+  en: string
+  zh: string
 }
 
 const localeKey = 'site-locale'
@@ -67,6 +81,28 @@ const initialSections: Record<SectionId, boolean> = {
   experience: false,
   contact: false
 }
+const helpEntries: HelpEntry[] = [
+  {
+    usage: 'cat [about.md]',
+    en: 'Show the profile summary.',
+    zh: '显示个人简介。'
+  },
+  {
+    usage: 'tree [work/] [--depth 1]',
+    en: 'Show featured projects.',
+    zh: '显示代表项目。'
+  },
+  {
+    usage: 'grep [timeline] [experience.log]',
+    en: 'Show the experience timeline.',
+    zh: '显示工作经历时间线。'
+  },
+  {
+    usage: 'finger [contact]',
+    en: 'Show contact details.',
+    zh: '显示联系方式。'
+  }
+]
 
 const pixelGlyphs: Record<string, string[]> = {
   E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
@@ -107,7 +143,7 @@ const copy: Record<Locale, Copy> = {
           'Sci-fi community platform with video, recommendation systems, multi-platform delivery, OSS/CDN distribution, Redis, MySQL, ffmpeg pipelines, and production release workflows.'
       },
       {
-        key: 'COVENATE UNFRAUDABLE ESIGN',
+        key: 'COVENATE_UNFRAUDABLE_ESIGN',
         summary:
           'Digital contract and e-sign platform with certificates, face verification, and in-person signing. I handled product design, architecture, full-stack development, and deployment.'
       }
@@ -224,6 +260,36 @@ function getInitialLocale(): Locale {
   return navigator.language.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US'
 }
 
+function parseCommand(command: string): HistoryKind {
+  const normalized = command.trim().toLowerCase()
+
+  if (normalized === 'help') {
+    return 'help'
+  }
+
+  if (/^cat(?:\s+about\.md)?$/i.test(normalized)) {
+    return 'about'
+  }
+
+  if (/^tree(?:\s+work\/?)?(?:\s+--depth\s+1)?$/i.test(normalized)) {
+    return 'projects'
+  }
+
+  if (/^grep(?:\s+timeline)?(?:\s+experience\.log)?$/i.test(normalized)) {
+    return 'experience'
+  }
+
+  if (/^finger(?:\s+contact)?$/i.test(normalized)) {
+    return 'contact'
+  }
+
+  if (/^rm\s+-rf(?:\s+.*)?$/i.test(normalized)) {
+    return 'rm'
+  }
+
+  return 'unknown'
+}
+
 function TerminalPrompt({
   command,
   host,
@@ -278,6 +344,179 @@ function PixelTitle({ text }: { text: string }) {
   )
 }
 
+function AboutOutput({ body }: { body: string }) {
+  return (
+    <div className="section-body narrow-body terminal-output">
+      <p>{body}</p>
+    </div>
+  )
+}
+
+function ProjectsOutput({ projects }: { projects: Project[] }) {
+  return (
+    <div className="section-body terminal-output">
+      <ol className="tree-list">
+        {projects.map((project, index) => (
+          <li key={project.key} className="tree-item" style={{ animationDelay: `${index * 90}ms` }}>
+            <div className="tree-title-row">
+              <span className="tree-glyph">{index === projects.length - 1 ? '└─' : '├─'}</span>
+              {project.href ? (
+                <a className="tree-link" href={project.href} target="_blank" rel="noreferrer">
+                  {project.key}
+                </a>
+              ) : (
+                <span className="tree-link">{project.key}</span>
+              )}
+            </div>
+            <div className="tree-description-row">
+              <span className="tree-glyph">│</span>
+              <p>{project.summary}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+function ExperienceOutput({ experiences }: { experiences: Experience[] }) {
+  return (
+    <div className="section-body terminal-output">
+      <ul className="experience-list">
+        {experiences.map((item) => (
+          <li key={`${item.company}-${item.period}`} className="experience-item">
+            <div className="experience-head">
+              <span>{item.company}</span>
+              <span>{item.period}</span>
+            </div>
+            <p>{item.summary}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function ContactOutput({ contacts }: { contacts: Contact[] }) {
+  return (
+    <div className="section-body terminal-output">
+      <ul className="contact-list">
+        {contacts.map((contact) => (
+          <li key={contact.label} className="contact-item">
+            <span className="contact-label">{contact.label}</span>
+            <a href={contact.href} target="_blank" rel="noreferrer">
+              {contact.value}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function HelpOutput({ locale }: { locale: Locale }) {
+  const isChinese = locale === 'zh-CN'
+
+  return (
+    <div className="section-body terminal-output">
+      <div className="help-panel">
+        <p className="help-heading">available commands / 可用命令</p>
+        <ul className="help-list">
+          {helpEntries.map((entry) => (
+            <li key={entry.usage} className="help-item">
+              <p className="help-usage">{entry.usage}</p>
+              <p className="help-description">
+                {entry.en} / {entry.zh}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+function UnknownOutput({ command, locale }: { command: string; locale: Locale }) {
+  const isChinese = locale === 'zh-CN'
+
+  return (
+    <div className="section-body terminal-output">
+      <div className="system-message">
+        <p>command not found: {command}</p>
+        <p>type `help` for available commands / 输入 `help` 查看可用命令</p>
+      </div>
+    </div>
+  )
+}
+
+function SingleLocaleHelpOutput({ locale }: { locale: Locale }) {
+  const isChinese = locale === 'zh-CN'
+
+  return (
+    <div className="section-body terminal-output">
+      <div className="help-panel">
+        <p className="help-heading">{isChinese ? '可用命令' : 'available commands'}</p>
+        <ul className="help-list">
+          {helpEntries.map((entry) => (
+            <li key={entry.usage} className="help-item">
+              <p className="help-usage">{entry.usage}</p>
+              <p className="help-description">{isChinese ? entry.zh : entry.en}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+function SingleLocaleUnknownOutput({ command, locale }: { command: string; locale: Locale }) {
+  const isChinese = locale === 'zh-CN'
+
+  return (
+    <div className="section-body terminal-output">
+      <div className="system-message">
+        <p>{isChinese ? `未找到命令：${command}` : `command not found: ${command}`}</p>
+        <p>{isChinese ? '输入 `help` 查看可用命令' : 'type `help` for available commands'}</p>
+      </div>
+    </div>
+  )
+}
+
+function HistoryOutput({
+  entry,
+  active,
+  locale
+}: {
+  entry: TerminalHistoryEntry
+  active: Copy
+  locale: Locale
+}) {
+  switch (entry.kind) {
+    case 'help':
+      return <SingleLocaleHelpOutput locale={locale} />
+    case 'about':
+      return <AboutOutput body={active.about.body} />
+    case 'projects':
+      return <ProjectsOutput projects={active.projectSections} />
+    case 'experience':
+      return <ExperienceOutput experiences={active.experiences} />
+    case 'contact':
+      return <ContactOutput contacts={active.contacts} />
+    case 'rm':
+      return (
+        <div className="section-body terminal-output">
+          <div className="system-message system-message-danger">
+            <p>portfolio has been deleted.</p>
+          </div>
+        </div>
+      )
+    case 'unknown':
+      return <SingleLocaleUnknownOutput command={entry.command} locale={locale} />
+    default:
+      return null
+  }
+}
+
 export default function App() {
   const [locale, setLocale] = useState<Locale>(() => getInitialLocale())
   const [activeStep, setActiveStep] = useState<StepId | null>(null)
@@ -286,6 +525,10 @@ export default function App() {
     ...initialSections
   }))
   const [sequenceDone, setSequenceDone] = useState(false)
+  const [terminalInput, setTerminalInput] = useState('')
+  const [terminalHistory, setTerminalHistory] = useState<TerminalHistoryEntry[]>([])
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const active = copy[locale]
 
   useEffect(() => {
@@ -297,7 +540,6 @@ export default function App() {
     const steps: SequenceStep[] = [
       {
         id: 'ssh',
-        host: active.gatewayHost,
         command: loginCommand,
         leadDelay: 1100,
         typeSpeed: 72,
@@ -306,7 +548,6 @@ export default function App() {
       },
       {
         id: 'hero',
-        host: active.shellHost,
         command: 'whoami',
         section: 'hero',
         leadDelay: 220,
@@ -316,7 +557,6 @@ export default function App() {
       },
       {
         id: 'about',
-        host: active.shellHost,
         command: active.about.command,
         section: 'about',
         leadDelay: 180,
@@ -326,7 +566,6 @@ export default function App() {
       },
       {
         id: 'projects',
-        host: active.shellHost,
         command: active.projectHeading,
         section: 'projects',
         leadDelay: 180,
@@ -336,7 +575,6 @@ export default function App() {
       },
       {
         id: 'experience',
-        host: active.shellHost,
         command: active.experienceHeading,
         section: 'experience',
         leadDelay: 180,
@@ -346,7 +584,6 @@ export default function App() {
       },
       {
         id: 'contact',
-        host: active.shellHost,
         command: active.contactHeading,
         section: 'contact',
         leadDelay: 180,
@@ -364,11 +601,11 @@ export default function App() {
         timerIds.push(timerId)
       })
 
-    const queueScroll = () => {
+    const queueScroll = (behavior: ScrollBehavior = 'smooth') => {
       const timerId = window.setTimeout(() => {
         window.scrollTo({
           top: document.documentElement.scrollHeight,
-          behavior: 'smooth'
+          behavior
         })
       }, 40)
 
@@ -381,6 +618,9 @@ export default function App() {
       setTypedCounts({})
       setRevealedSections({ ...initialSections })
       setSequenceDone(false)
+      setTerminalInput('')
+      setTerminalHistory([])
+      setDialogOpen(false)
 
       for (const step of steps) {
         if (cancelled) {
@@ -438,9 +678,65 @@ export default function App() {
       cancelled = true
       timerIds.forEach((timerId) => window.clearTimeout(timerId))
     }
-  }, [locale])
+  }, [locale, active.about.command, active.projectHeading, active.experienceHeading, active.contactHeading])
+
+  useEffect(() => {
+    if (!sequenceDone || dialogOpen) {
+      return
+    }
+
+    const timerId = window.setTimeout(() => {
+      inputRef.current?.focus()
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth'
+      })
+    }, 80)
+
+    return () => window.clearTimeout(timerId)
+  }, [sequenceDone, terminalHistory, dialogOpen])
+
+  useEffect(() => {
+    if (!dialogOpen) {
+      return
+    }
+
+    const timerId = window.setTimeout(() => {
+      window.close()
+      if (!window.closed) {
+        window.location.replace('about:blank')
+      }
+    }, 1400)
+
+    return () => window.clearTimeout(timerId)
+  }, [dialogOpen])
 
   const hasStarted = (stepId: StepId) => typedCounts[stepId] !== undefined
+
+  const handleTerminalSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    const command = terminalInput.trim()
+    if (!command) {
+      return
+    }
+
+    const kind = parseCommand(command)
+
+    setTerminalHistory((current) => [
+      ...current,
+      {
+        id: Date.now() + current.length,
+        command,
+        kind
+      }
+    ])
+    setTerminalInput('')
+
+    if (kind === 'rm') {
+      setDialogOpen(true)
+    }
+  }
 
   return (
     <main className="terminal-page">
@@ -500,11 +796,7 @@ export default function App() {
               typedLength={typedCounts.about ?? 0}
               isActive={activeStep === 'about'}
             />
-            {revealedSections.about ? (
-              <div className="section-body narrow-body terminal-output">
-                <p>{active.about.body}</p>
-              </div>
-            ) : null}
+            {revealedSections.about ? <AboutOutput body={active.about.body} /> : null}
           </section>
         ) : null}
 
@@ -516,32 +808,7 @@ export default function App() {
               typedLength={typedCounts.projects ?? 0}
               isActive={activeStep === 'projects'}
             />
-            {revealedSections.projects ? (
-              <div className="section-body terminal-output">
-                <ol className="tree-list">
-                  {active.projectSections.map((project, index) => (
-                    <li key={project.key} className="tree-item" style={{ animationDelay: `${index * 90}ms` }}>
-                      <div className="tree-title-row">
-                        <span className="tree-glyph">
-                          {index === active.projectSections.length - 1 ? '└─' : '├─'}
-                        </span>
-                        {project.href ? (
-                          <a className="tree-link" href={project.href} target="_blank" rel="noreferrer">
-                            {project.key}
-                          </a>
-                        ) : (
-                          <span className="tree-link">{project.key}</span>
-                        )}
-                      </div>
-                      <div className="tree-description-row">
-                        <span className="tree-glyph">│</span>
-                        <p>{project.summary}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ) : null}
+            {revealedSections.projects ? <ProjectsOutput projects={active.projectSections} /> : null}
           </section>
         ) : null}
 
@@ -553,21 +820,7 @@ export default function App() {
               typedLength={typedCounts.experience ?? 0}
               isActive={activeStep === 'experience'}
             />
-            {revealedSections.experience ? (
-              <div className="section-body terminal-output">
-                <ul className="experience-list">
-                  {active.experiences.map((item) => (
-                    <li key={`${item.company}-${item.period}`} className="experience-item">
-                      <div className="experience-head">
-                        <span>{item.company}</span>
-                        <span>{item.period}</span>
-                      </div>
-                      <p>{item.summary}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+            {revealedSections.experience ? <ExperienceOutput experiences={active.experiences} /> : null}
           </section>
         ) : null}
 
@@ -579,33 +832,58 @@ export default function App() {
               typedLength={typedCounts.contact ?? 0}
               isActive={activeStep === 'contact'}
             />
-            {revealedSections.contact ? (
-              <div className="section-body terminal-output">
-                <ul className="contact-list">
-                  {active.contacts.map((contact) => (
-                    <li key={contact.label} className="contact-item">
-                      <span className="contact-label">{contact.label}</span>
-                      <a href={contact.href} target="_blank" rel="noreferrer">
-                        {contact.value}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+            {revealedSections.contact ? <ContactOutput contacts={active.contacts} /> : null}
           </section>
         ) : null}
 
         {sequenceDone ? (
           <footer className="terminal-footer terminal-output">
-            <div className="prompt-line prompt-line-live">
-              <span className="prompt-prefix">{active.shellHost}</span>
-              <span className="cursor" aria-hidden="true" />
-            </div>
-            <p>{active.footer}</p>
+            <p className="terminal-signature">{active.footer}</p>
+
+            {terminalHistory.length > 0 ? (
+              <div className="terminal-history">
+                {terminalHistory.map((entry) => (
+                  <div key={entry.id} className="terminal-history-entry">
+                    <div className="prompt-line prompt-line-live">
+                      <span className="prompt-prefix">{active.shellHost}</span>
+                      <span>{entry.command}</span>
+                    </div>
+                    <HistoryOutput entry={entry} active={active} locale={locale} />
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <form className="terminal-input-form" onSubmit={handleTerminalSubmit}>
+              <div className="prompt-line prompt-line-live prompt-line-input">
+                <span className="prompt-prefix">{active.shellHost}</span>
+                <input
+                  ref={inputRef}
+                  className="terminal-input"
+                  value={terminalInput}
+                  onChange={(event) => setTerminalInput(event.target.value)}
+                  autoCapitalize="none"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  disabled={dialogOpen}
+                  aria-label="Terminal input"
+                />
+              </div>
+            </form>
           </footer>
         ) : null}
       </div>
+
+      {dialogOpen ? (
+        <div className="panic-overlay" role="dialog" aria-modal="true" aria-labelledby="panic-title">
+          <div className="panic-dialog">
+            <p className="panic-tag">rm -rf</p>
+            <h2 id="panic-title">portfolio has been deleted.</h2>
+            <p className="panic-caption">closing current session...</p>
+          </div>
+        </div>
+      ) : null}
     </main>
   )
 }
