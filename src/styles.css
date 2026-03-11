@@ -97,6 +97,7 @@ button {
 }
 
 .locale-option {
+  display: inline-block;
   padding: 4px 8px;
   border: 0;
   background: transparent;
@@ -105,6 +106,7 @@ button {
   font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  text-decoration: none;
   transition:
     background-color 180ms ease,
     color 180ms ease,
@@ -125,9 +127,54 @@ button {
   margin-bottom: 56px;
 }
 
+.terminal-section {
+  position: relative;
+}
+
 .section-body {
   padding-left: 32px;
   margin-top: 18px;
+}
+
+.prompt-stage,
+.output-stage {
+  transition:
+    opacity 320ms ease,
+    transform 320ms ease,
+    max-height 420ms ease;
+}
+
+.prompt-stage {
+  max-height: 32px;
+}
+
+.prompt-stage.is-visible {
+  max-height: 32px;
+}
+
+.prompt-stage:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(8px);
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.output-stage {
+  position: relative;
+  max-height: 2400px;
+}
+
+.output-stage.is-revealed {
+  max-height: 2400px;
+}
+
+.output-stage:not(.is-revealed) {
+  opacity: 0;
+  transform: translateY(12px);
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .narrow-body {
@@ -244,6 +291,18 @@ button {
 
 .terminal-output {
   animation: output-reveal 420ms ease both;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .tree-list,

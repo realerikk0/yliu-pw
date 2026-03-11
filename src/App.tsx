@@ -3,6 +3,10 @@ import { useEffect, useRef, useState } from 'react'
 
 type Locale = 'zh-CN' | 'en-US'
 
+type AppProps = {
+  initialLocale?: Locale
+}
+
 type CommandSection = {
   command: string
   body: string
@@ -68,12 +72,15 @@ type HelpEntry = {
   zh: string
 }
 
-const localeKey = 'site-locale'
 const loginCommand = 'ssh erikk0@portfolio'
 const localeOptions: Array<{ value: Locale; label: string }> = [
   { value: 'en-US', label: 'en_US' },
   { value: 'zh-CN', label: 'zh_CN' }
 ]
+const localePaths: Record<Locale, string> = {
+  'en-US': '/',
+  'zh-CN': '/zh/'
+}
 const initialSections: Record<SectionId, boolean> = {
   hero: false,
   about: false,
@@ -251,13 +258,24 @@ const copy: Record<Locale, Copy> = {
   }
 }
 
-function getInitialLocale(): Locale {
-  const saved = window.localStorage.getItem(localeKey)
-  if (saved === 'zh-CN' || saved === 'en-US') {
-    return saved
+function isLocale(value?: string): value is Locale {
+  return value === 'zh-CN' || value === 'en-US'
+}
+
+function resolveLocale(initialLocale?: Locale): Locale {
+  if (isLocale(initialLocale)) {
+    return initialLocale
   }
 
-  return navigator.language.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US'
+  if (typeof document !== 'undefined' && isLocale(document.documentElement.lang)) {
+    return document.documentElement.lang
+  }
+
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/zh')) {
+    return 'zh-CN'
+  }
+
+  return 'en-US'
 }
 
 function parseCommand(command: string): HistoryKind {
@@ -344,17 +362,23 @@ function PixelTitle({ text }: { text: string }) {
   )
 }
 
-function AboutOutput({ body }: { body: string }) {
+function AboutOutput({ body, locale }: { body: string; locale: Locale }) {
+  const heading = locale === 'zh-CN' ? '关于 Erik Liu' : 'About Erik Liu'
+
   return (
     <div className="section-body narrow-body terminal-output">
+      <h2 className="sr-only">{heading}</h2>
       <p>{body}</p>
     </div>
   )
 }
 
-function ProjectsOutput({ projects }: { projects: Project[] }) {
+function ProjectsOutput({ projects, locale }: { projects: Project[]; locale: Locale }) {
+  const heading = locale === 'zh-CN' ? '代表项目' : 'Featured Projects'
+
   return (
     <div className="section-body terminal-output">
+      <h2 className="sr-only">{heading}</h2>
       <ol className="tree-list">
         {projects.map((project, index) => (
           <li key={project.key} className="tree-item" style={{ animationDelay: `${index * 90}ms` }}>
@@ -379,9 +403,12 @@ function ProjectsOutput({ projects }: { projects: Project[] }) {
   )
 }
 
-function ExperienceOutput({ experiences }: { experiences: Experience[] }) {
+function ExperienceOutput({ experiences, locale }: { experiences: Experience[]; locale: Locale }) {
+  const heading = locale === 'zh-CN' ? '工作经历' : 'Experience Timeline'
+
   return (
     <div className="section-body terminal-output">
+      <h2 className="sr-only">{heading}</h2>
       <ul className="experience-list">
         {experiences.map((item) => (
           <li key={`${item.company}-${item.period}`} className="experience-item">
@@ -397,9 +424,12 @@ function ExperienceOutput({ experiences }: { experiences: Experience[] }) {
   )
 }
 
-function ContactOutput({ contacts }: { contacts: Contact[] }) {
+function ContactOutput({ contacts, locale }: { contacts: Contact[]; locale: Locale }) {
+  const heading = locale === 'zh-CN' ? '联系方式' : 'Contact Details'
+
   return (
     <div className="section-body terminal-output">
+      <h2 className="sr-only">{heading}</h2>
       <ul className="contact-list">
         {contacts.map((contact) => (
           <li key={contact.label} className="contact-item">
@@ -495,13 +525,13 @@ function HistoryOutput({
     case 'help':
       return <SingleLocaleHelpOutput locale={locale} />
     case 'about':
-      return <AboutOutput body={active.about.body} />
+      return <AboutOutput body={active.about.body} locale={locale} />
     case 'projects':
-      return <ProjectsOutput projects={active.projectSections} />
+      return <ProjectsOutput projects={active.projectSections} locale={locale} />
     case 'experience':
-      return <ExperienceOutput experiences={active.experiences} />
+      return <ExperienceOutput experiences={active.experiences} locale={locale} />
     case 'contact':
-      return <ContactOutput contacts={active.contacts} />
+      return <ContactOutput contacts={active.contacts} locale={locale} />
     case 'rm':
       return (
         <div className="section-body terminal-output">
@@ -517,8 +547,8 @@ function HistoryOutput({
   }
 }
 
-export default function App() {
-  const [locale, setLocale] = useState<Locale>(() => getInitialLocale())
+export default function App({ initialLocale }: AppProps) {
+  const locale = resolveLocale(initialLocale)
   const [activeStep, setActiveStep] = useState<StepId | null>(null)
   const [typedCounts, setTypedCounts] = useState<Partial<Record<StepId, number>>>({})
   const [revealedSections, setRevealedSections] = useState<Record<SectionId, boolean>>(() => ({
@@ -530,10 +560,13 @@ export default function App() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const active = copy[locale]
+  const heroHeading =
+    locale === 'zh-CN'
+      ? 'Erik Liu，全栈工程师，构建系统、产品与 AI 工作流。'
+      : 'Erik Liu, full-stack engineer building systems, products, and AI workflows.'
 
   useEffect(() => {
     document.documentElement.lang = locale
-    window.localStorage.setItem(localeKey, locale)
   }, [locale])
 
   useEffect(() => {
@@ -756,85 +789,96 @@ export default function App() {
               const isActive = locale === option.value
 
               return (
-                <button
+                <a
                   key={option.value}
-                  type="button"
                   className={`locale-option${isActive ? ' is-active' : ''}`}
-                  aria-pressed={isActive}
-                  onClick={() => setLocale(option.value)}
+                  href={localePaths[option.value]}
+                  hrefLang={option.value}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   [{option.label}]
-                </button>
+                </a>
               )
             })}
           </div>
         </div>
 
-        {hasStarted('hero') ? (
-          <header className="section hero-section">
+        <header className={`section hero-section terminal-section${hasStarted('hero') ? ' is-started' : ' is-prestart'}`}>
+          <div className={`prompt-stage${hasStarted('hero') ? ' is-visible' : ''}`}>
             <TerminalPrompt
               command="whoami"
               host={active.shellHost}
               typedLength={typedCounts.hero ?? 0}
               isActive={activeStep === 'hero'}
             />
-            {revealedSections.hero ? (
-              <div className="section-body hero-stack terminal-output">
-                <PixelTitle text="ERIK LIU" />
-                <p className="hero-line">{active.hero[0]}</p>
-                <p className="hero-line">{active.hero[1]}</p>
-              </div>
-            ) : null}
-          </header>
-        ) : null}
+          </div>
+          <div className={`output-stage${revealedSections.hero ? ' is-revealed' : ''}`}>
+            <div className="section-body hero-stack terminal-output">
+              <h1 className="sr-only">{heroHeading}</h1>
+              <PixelTitle text="ERIK LIU" />
+              <p className="hero-line">{active.hero[0]}</p>
+              <p className="hero-line">{active.hero[1]}</p>
+            </div>
+          </div>
+        </header>
 
-        {hasStarted('about') ? (
-          <section className="section">
+        <section className={`section terminal-section${hasStarted('about') ? ' is-started' : ' is-prestart'}`}>
+          <div className={`prompt-stage${hasStarted('about') ? ' is-visible' : ''}`}>
             <TerminalPrompt
               command={active.about.command}
               host={active.shellHost}
               typedLength={typedCounts.about ?? 0}
               isActive={activeStep === 'about'}
             />
-            {revealedSections.about ? <AboutOutput body={active.about.body} /> : null}
-          </section>
-        ) : null}
+          </div>
+          <div className={`output-stage${revealedSections.about ? ' is-revealed' : ''}`}>
+            <AboutOutput body={active.about.body} locale={locale} />
+          </div>
+        </section>
 
-        {hasStarted('projects') ? (
-          <section className="section">
+        <section className={`section terminal-section${hasStarted('projects') ? ' is-started' : ' is-prestart'}`}>
+          <div className={`prompt-stage${hasStarted('projects') ? ' is-visible' : ''}`}>
             <TerminalPrompt
               command={active.projectHeading}
               host={active.shellHost}
               typedLength={typedCounts.projects ?? 0}
               isActive={activeStep === 'projects'}
             />
-            {revealedSections.projects ? <ProjectsOutput projects={active.projectSections} /> : null}
-          </section>
-        ) : null}
+          </div>
+          <div className={`output-stage${revealedSections.projects ? ' is-revealed' : ''}`}>
+            <ProjectsOutput projects={active.projectSections} locale={locale} />
+          </div>
+        </section>
 
-        {hasStarted('experience') ? (
-          <section className="section">
+        <section className={`section terminal-section${hasStarted('experience') ? ' is-started' : ' is-prestart'}`}>
+          <div className={`prompt-stage${hasStarted('experience') ? ' is-visible' : ''}`}>
             <TerminalPrompt
               command={active.experienceHeading}
               host={active.shellHost}
               typedLength={typedCounts.experience ?? 0}
               isActive={activeStep === 'experience'}
             />
-            {revealedSections.experience ? <ExperienceOutput experiences={active.experiences} /> : null}
-          </section>
-        ) : null}
+          </div>
+          <div className={`output-stage${revealedSections.experience ? ' is-revealed' : ''}`}>
+            <ExperienceOutput experiences={active.experiences} locale={locale} />
+          </div>
+        </section>
 
-        {hasStarted('contact') ? (
-          <section className="section contact-section">
+        <section
+          className={`section contact-section terminal-section${hasStarted('contact') ? ' is-started' : ' is-prestart'}`}
+        >
+          <div className={`prompt-stage${hasStarted('contact') ? ' is-visible' : ''}`}>
             <TerminalPrompt
               command={active.contactHeading}
               host={active.shellHost}
               typedLength={typedCounts.contact ?? 0}
               isActive={activeStep === 'contact'}
             />
-            {revealedSections.contact ? <ContactOutput contacts={active.contacts} /> : null}
-          </section>
-        ) : null}
+          </div>
+          <div className={`output-stage${revealedSections.contact ? ' is-revealed' : ''}`}>
+            <ContactOutput contacts={active.contacts} locale={locale} />
+          </div>
+        </section>
 
         {sequenceDone ? (
           <footer className="terminal-footer terminal-output">
