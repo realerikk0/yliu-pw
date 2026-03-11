@@ -134,21 +134,22 @@ button {
   overflow-x: auto;
   display: inline-block;
   width: fit-content;
-  padding: 4px 22px 18px 0;
+  padding: 4px 26px 20px 0;
 }
 
 .pixel-layer {
   display: flex;
   align-items: flex-start;
-  gap: clamp(7px, 0.92vw, 12px);
+  gap: clamp(3px, 0.44vw, 7px);
   width: fit-content;
 }
 
 .pixel-layer-outline {
   position: absolute;
-  inset: 6px auto auto 6px;
+  inset: 8px auto auto 8px;
   z-index: 0;
   pointer-events: none;
+  opacity: 0.98;
 }
 
 .pixel-layer-main {
@@ -159,7 +160,7 @@ button {
 .pixel-letter {
   --pixel-width: clamp(10px, 1.26vw, 19px);
   --pixel-height: clamp(8px, 1.04vw, 15px);
-  --pixel-gap: clamp(2px, 0.18vw, 3px);
+  --pixel-gap: clamp(1px, 0.12vw, 2px);
   display: grid;
   grid-template-columns: repeat(var(--pixel-columns), var(--pixel-width));
   grid-template-rows: repeat(7, var(--pixel-height));
@@ -182,12 +183,15 @@ button {
   background: #0a0a0a;
   box-shadow:
     1px 1px 0 rgba(255, 255, 255, 0.22) inset,
-    0 0 0 1px rgba(0, 0, 0, 0.94);
+    0 0 0 1px rgba(0, 0, 0, 0.96),
+    2px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .pixel-layer-outline .pixel-cell.is-on {
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.82);
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.84),
+    0 0 0 4px rgba(255, 255, 255, 0.9);
 }
 
 .hero-line {
@@ -400,11 +404,11 @@ button {
   }
 
   .pixel-layer {
-    gap: 5px;
+    gap: 3px;
   }
 
   .pixel-layer-outline {
-    inset: 4px auto auto 4px;
+    inset: 5px auto auto 5px;
   }
 
   .experience-head,
