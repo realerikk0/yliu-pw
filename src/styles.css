@@ -420,12 +420,14 @@ button {
 }
 
 .terminal-footer {
-  padding-top: 24px;
-  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
 }
 
 .terminal-signature {
-  margin: 0 0 28px;
+  margin: 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
   font-size: 0.72rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
@@ -444,7 +446,7 @@ button {
 }
 
 .terminal-input-form {
-  margin: 0;
+  margin: 0 0 28px;
 }
 
 .prompt-line-input {

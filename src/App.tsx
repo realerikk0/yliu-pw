@@ -882,8 +882,6 @@ export default function App({ initialLocale }: AppProps) {
 
         {sequenceDone ? (
           <footer className="terminal-footer terminal-output">
-            <p className="terminal-signature">{active.footer}</p>
-
             {terminalHistory.length > 0 ? (
               <div className="terminal-history">
                 {terminalHistory.map((entry) => (
@@ -915,6 +913,8 @@ export default function App({ initialLocale }: AppProps) {
                 />
               </div>
             </form>
+
+            <p className="terminal-signature">{active.footer}</p>
           </footer>
         ) : null}
       </div>
