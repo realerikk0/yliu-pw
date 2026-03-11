@@ -26,7 +26,8 @@ type Contact = {
 }
 
 type Copy = {
-  promptHost: string
+  gatewayHost: string
+  shellHost: string
   identity: string
   hero: string[]
   about: CommandSection
@@ -37,10 +38,13 @@ type Copy = {
   contactHeading: string
   contacts: Contact[]
   footer: string
-  languageToggle: string
 }
 
 const localeKey = 'site-locale'
+const localeOptions: Array<{ value: Locale; label: string }> = [
+  { value: 'en-US', label: 'en_US' },
+  { value: 'zh-CN', label: 'zh_CN' }
+]
 const pixelGlyphs: Record<string, string[]> = {
   E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
   R: ['111110', '100011', '100011', '111110', '101100', '100110', '100011'],
@@ -53,7 +57,8 @@ const pixelGlyphs: Record<string, string[]> = {
 
 const copy: Record<Locale, Copy> = {
   'en-US': {
-    promptHost: 'visitor@california:~$',
+    gatewayHost: 'anonymous@mainframe:~$',
+    shellHost: 'erikk0@portfolio:~$',
     identity: 'Erik Liu',
     hero: [
       'Freedom through logic.',
@@ -83,7 +88,7 @@ const copy: Record<Locale, Copy> = {
           'Sci-fi community platform with video, recommendation systems, multi-platform delivery, OSS/CDN distribution, Redis, MySQL, ffmpeg pipelines, and production release workflows.'
       },
       {
-        key: 'GEZHI_ESIGN',
+        key: 'COVENATE UNFRAUDABLE ESIGN',
         summary:
           'Digital contract and e-sign platform with certificates, face verification, and in-person signing. I handled product design, architecture, full-stack development, and deployment.'
       }
@@ -91,7 +96,7 @@ const copy: Record<Locale, Copy> = {
     experienceHeading: 'grep timeline experience.log',
     experiences: [
       {
-        company: 'Covenate / Lianlu Tech',
+        company: 'Covenate',
         period: '2017-2021',
         summary:
           'Built and shipped blockchain-backed and certificate-based e-sign systems with PHP and JavaScript.'
@@ -121,11 +126,11 @@ const copy: Record<Locale, Copy> = {
         href: 'mailto:yuanliu325@gmail.com'
       }
     ],
-    footer: 'Erik Liu / Systems, products, and AI workflows',
-    languageToggle: '切换到中文'
+    footer: 'Erik Liu / Systems, products, and AI workflows'
   },
   'zh-CN': {
-    promptHost: 'visitor@california:~$',
+    gatewayHost: 'anonymous@mainframe:~$',
+    shellHost: 'erikk0@portfolio:~$',
     identity: 'Erik Liu',
     hero: [
       'Freedom through logic.',
@@ -145,17 +150,17 @@ const copy: Record<Locale, Copy> = {
           '智能投资助手，覆盖美股与加密货币。我负责架构设计、数据订阅、高频同步、数据清洗、内部回测平台以及高并发 LLM 服务稳定性。'
       },
       {
-        key: 'YUME_DESKTOP',
+        key: '梦珑桌面',
         summary:
           '基于 ASR、记忆系统、TTS、动作生成和 Unreal Engine 的实时 AI 陪伴桌面应用。我负责立项、技术路线、模型训练、系统集成与 Steam 上架。'
       },
       {
-        key: 'LEANHUB',
+        key: '零号社区',
         summary:
           '科幻社区平台，覆盖视频、推荐系统、多端分发、OSS/CDN、Redis、MySQL、ffmpeg 转码链路与生产发布流程。'
       },
       {
-        key: 'GEZHI_ESIGN',
+        key: '鸽纸电签',
         summary:
           '电子合同与电子签平台，支持数字证书、人脸识别与面对面签署。我负责产品设计、架构、全栈开发与部署。'
       }
@@ -163,7 +168,7 @@ const copy: Record<Locale, Copy> = {
     experienceHeading: 'grep timeline experience.log',
     experiences: [
       {
-        company: 'Covenate / Lianlu Tech',
+        company: 'Covenate',
         period: '2017-2021',
         summary:
           '参与并交付基于区块链、数字证书能力的电子签署系统，技术栈以 PHP 与 JavaScript 为主。'
@@ -193,8 +198,7 @@ const copy: Record<Locale, Copy> = {
         href: 'mailto:yuanliu325@gmail.com'
       }
     ],
-    footer: 'Erik Liu / 系统、产品与 AI workflow',
-    languageToggle: 'Switch to English'
+    footer: 'Erik Liu / 系统、产品与 AI workflow'
   }
 }
 
@@ -265,18 +269,29 @@ export default function App() {
 
       <div className="terminal-shell">
         <div className="toolbar">
-          <Prompt command="ssh erikliu@portfolio" host={active.promptHost} />
-          <button
-            type="button"
-            className="language-switch"
-            onClick={() => setLocale((current) => (current === 'zh-CN' ? 'en-US' : 'zh-CN'))}
-          >
-            {active.languageToggle}
-          </button>
+          <Prompt command="ssh erikk0@portfolio" host={active.gatewayHost} />
+          <div className="locale-switch" role="group" aria-label="Language selector">
+            <span className="locale-label">locale</span>
+            {localeOptions.map((option) => {
+              const isActive = locale === option.value
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`locale-option${isActive ? ' is-active' : ''}`}
+                  aria-pressed={isActive}
+                  onClick={() => setLocale(option.value)}
+                >
+                  [{option.label}]
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         <header className="section hero-section">
-          <Prompt command="whoami" host={active.promptHost} />
+          <Prompt command="whoami" host={active.shellHost} />
           <div className="section-body hero-stack">
             <PixelTitle text="ERIK LIU" />
             <p className="hero-line">{active.hero[0]}</p>
@@ -285,14 +300,14 @@ export default function App() {
         </header>
 
         <section className="section">
-          <Prompt command={active.about.command} host={active.promptHost} />
+          <Prompt command={active.about.command} host={active.shellHost} />
           <div className="section-body narrow-body">
             <p>{active.about.body}</p>
           </div>
         </section>
 
         <section className="section">
-          <Prompt command={active.projectHeading} host={active.promptHost} />
+          <Prompt command={active.projectHeading} host={active.shellHost} />
           <div className="section-body">
             <ol className="tree-list">
               {active.projectSections.map((project, index) => (
@@ -318,7 +333,7 @@ export default function App() {
         </section>
 
         <section className="section">
-          <Prompt command={active.experienceHeading} host={active.promptHost} />
+          <Prompt command={active.experienceHeading} host={active.shellHost} />
           <div className="section-body">
             <ul className="experience-list">
               {active.experiences.map((item) => (
@@ -335,7 +350,7 @@ export default function App() {
         </section>
 
         <section className="section contact-section">
-          <Prompt command={active.contactHeading} host={active.promptHost} />
+          <Prompt command={active.contactHeading} host={active.shellHost} />
           <div className="section-body">
             <ul className="contact-list">
               {active.contacts.map((contact) => (
@@ -352,7 +367,7 @@ export default function App() {
 
         <footer className="terminal-footer">
           <div className="prompt-line">
-            <span className="prompt-prefix">{active.promptHost}</span>
+            <span className="prompt-prefix">{active.shellHost}</span>
             <span className="cursor" aria-hidden="true" />
           </div>
           <p>{active.footer}</p>

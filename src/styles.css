@@ -74,22 +74,46 @@ button {
   margin-bottom: 48px;
 }
 
-.language-switch {
-  padding: 10px 14px;
+.locale-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.7);
-  color: var(--text);
+}
+
+.locale-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.locale-option {
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
   cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   transition:
     background-color 180ms ease,
     color 180ms ease,
     transform 180ms ease;
 }
 
-.language-switch:hover {
-  background: var(--text);
-  color: #fff;
+.locale-option:hover {
+  color: var(--text);
   transform: translateY(-1px);
+}
+
+.locale-option.is-active {
+  background: var(--text);
+  color: var(--background);
 }
 
 .section {
@@ -373,6 +397,10 @@ button {
     align-items: flex-start;
     flex-direction: column;
     margin-bottom: 36px;
+  }
+
+  .locale-switch {
+    flex-wrap: wrap;
   }
 
   .section {
