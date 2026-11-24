@@ -20,7 +20,7 @@ type Project = {
 
 type Experience = {
   company: string
-  period: string
+  period?: string
   summary: string
 }
 
@@ -168,6 +168,10 @@ const copy: Record<Locale, Copy> = {
         period: '2022-2026',
         summary:
           'Led planning, system design, AI integration, motion workflow research, and product delivery across virtual idol, AI companion, and trading-assistant products.'
+      },
+      {
+        company: 'YSR',
+        summary: 'Drive enterprise AI integration and develop physics-based models for industrial applications.'
       }
     ],
     contactHeading: 'finger contact',
@@ -179,8 +183,8 @@ const copy: Record<Locale, Copy> = {
       },
       {
         label: 'X',
-        value: 'x.com/helloerikk0',
-        href: 'https://x.com/helloerikk0'
+        value: 'x.com/hierikk0',
+        href: 'https://x.com/hierikk0'
       },
       {
         label: 'MAIL',
@@ -234,6 +238,10 @@ const copy: Record<Locale, Copy> = {
         company: 'Lilyn.ai',
         period: '2022-2026',
         summary: '主导虚拟偶像、AI 陪伴桌面应用与智能投资助手等产品的规划、系统设计、AI 集成与技术落地。'
+      },
+      {
+        company: 'YSR',
+        summary: '推进企业 AI 集成，开发工业物理模型。'
       }
     ],
     contactHeading: 'finger contact',
@@ -245,8 +253,8 @@ const copy: Record<Locale, Copy> = {
       },
       {
         label: 'X',
-        value: 'x.com/helloerikk0',
-        href: 'https://x.com/helloerikk0'
+        value: 'x.com/hierikk0',
+        href: 'https://x.com/hierikk0'
       },
       {
         label: 'MAIL',
@@ -414,7 +422,7 @@ function ExperienceOutput({ experiences, locale }: { experiences: Experience[]; 
           <li key={`${item.company}-${item.period}`} className="experience-item">
             <div className="experience-head">
               <span>{item.company}</span>
-              <span>{item.period}</span>
+              {item.period && <span>{item.period}</span>}
             </div>
             <p>{item.summary}</p>
           </li>
